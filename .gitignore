@@ -1,0 +1,7 @@
+.DS_Store
+.hugo_build.lock
+*.min.js
+*.min.css
+env.makefile
+hugo.toml
+**/public/

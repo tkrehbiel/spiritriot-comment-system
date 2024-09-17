@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Comment Sample</title>
+        <!-- I put these js and css assets in an S3 bucket served through CloudFront -->
+        <script type="text/javascript" src="/js/comments.js"></script>
+        <link rel="stylesheet" href="/css/comments.css" />
+    </head>
+    <body>
+        <p>This is a sample showing how to add comments to a static page.</p>
+        <div id="commentsection">
+            <div id="spiritriot-live-comments"></div>
+            <div id="spiritriot-form-container"></div>
+            <!-- Reference the domain of the API Gateway endpoint that
+                 connects to the comment page Lambda function -->
+            <p><a href="https://comments.endgameviable.com?origin=/&title=A+Post">Click here to enter comments without Javascript.
+                This link should go to the Lambda comment form endpoint.
+            </a></p>
+        </div>
+    </body>
+</html>

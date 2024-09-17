@@ -1,0 +1,31 @@
+<div id="commentsection">
+    <div id="spiritriot-archive-comments">
+        {{ $allcomments := slice }}
+        {{ $pageName := .RelPermalink }}
+        {{ range $file, $pages := .Site.Data.comments }}
+            {{ $comments := index $pages $pageName }}
+            {{ if $comments }}
+                {{ range $comment := $comments }}
+                {{ $allcomments = $allcomments | append $comment }}
+                {{ end }}
+            {{ end }}
+        {{ end }}
+        {{ if $allcomments }}
+            <h2>Archived Comments</h2>
+            {{ $sorted := sort $allcomments "date" "asc" }}
+            {{ range $sorted }}
+                <div class="comment" id="comment{{ .id }}">
+                    <p><span class="author">{{ .author }}</span>
+                        <span class="datetime">{{ .date }}</span> {{ .comment | markdownify }}</p>
+                </div>
+            {{ end }}
+        {{ end }}
+    </div>
+
+    <div id="spiritriot-live-comments"></div>
+    <div id="comment-entry">
+        <p><b><a href="{{ .Site.Params.commentUrl }}?origin={{ .Permalink }}&title={{ .Title }}" rel="nofollow">Go here to enter a comment on this post without Javascript</a></b>. <noscript>Or enable Javascript to see and submit comments right here.</noscript></p>
+
+        <div id="spiritriot-form-container"></div>
+    </div>
+</div>
