@@ -9,6 +9,8 @@ import (
 	"endgameviable-comment-services/internal/common"
 	"endgameviable-comment-services/internal/writeComments"
 
+	"strings"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -47,6 +49,35 @@ var (
 
 func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	log.Printf("%v+", request)
+
+	if request.HTTPMethod == "OPTIONS" {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 200,
+			Headers:    common.GetCORSHeaders("GET, POST, OPTIONS"),
+		}, nil
+	}
+
+	// Route auth endpoints
+	path := request.Path
+	if strings.HasPrefix(path, "/default") {
+		path = strings.TrimPrefix(path, "/default")
+	}
+	path = strings.TrimSuffix(path, "/")
+
+	switch path {
+	case "/auth/mastodon/prompt":
+		return handleMastodonPrompt(ctx, request)
+	case "/auth/mastodon/init":
+		return handleMastodonInit(ctx, request)
+	case "/auth/mastodon/callback":
+		return handleMastodonCallback(ctx, request)
+	case "/auth/indieauth/prompt":
+		return handleIndieAuthPrompt(ctx, request)
+	case "/auth/indieauth/init":
+		return handleIndieAuthInit(ctx, request)
+	case "/auth/indieauth/callback":
+		return handleIndieAuthCallback(ctx, request)
+	}
 
 	var form CommentData
 	err := json.Unmarshal([]byte(request.Body), &form)
