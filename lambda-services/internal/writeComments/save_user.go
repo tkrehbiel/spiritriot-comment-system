@@ -14,8 +14,10 @@ import (
 const userTableVar = "DYNAMO_USER_TABLE"
 
 type UserAccount struct {
-	Author   string `json:"author" dynamodbav:"author"`
-	AuthorID string `json:"author_id" dynamodbav:"author_id"`
+	Author     string `json:"author" dynamodbav:"author"`
+	UserID     string `json:"user_id" dynamodbav:"user_id"`
+	AuthorID   string `json:"author_id" dynamodbav:"author_id"`
+	ProfileURL string `json:"profile_url,omitempty" dynamodbav:"profile_url,omitempty"`
 }
 
 type dynamoService interface {

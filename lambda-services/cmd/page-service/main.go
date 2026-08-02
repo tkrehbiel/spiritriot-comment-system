@@ -15,7 +15,6 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 )
@@ -83,6 +82,7 @@ it allows dynamic page generation.</i></p>
 		<input type="text" id="page" name="page" value="{{ .Page }}">
 		<input type="text" id="origin" name="origin" value="{{ .PostOrigin }}">
 		<input type="text" id="title" name="title" value="{{ .PostTitle }}">
+		{{ if .Private }}<input type="hidden" name="private" value="true">{{ end }}
 	</div>
 
 	<input type="submit" value="Submit">
@@ -110,16 +110,32 @@ type CommentPageData struct {
 	CSS       string
 }
 
+type pageDynamoService interface {
+	GetItem(context.Context, *dynamodb.GetItemInput, ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
+	PutItem(context.Context, *dynamodb.PutItemInput, ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
+	Query(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
+}
+
+type pageSnsService interface {
+	Publish(context.Context, *sns.PublishInput, ...func(*sns.Options)) (*sns.PublishOutput, error)
+}
+
+var (
+	dynamoClient pageDynamoService
+	snsClient    pageSnsService
+)
+
 func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	log.Println(request)
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
-	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
+	if dynamoClient == nil || snsClient == nil {
+		cfg, err := common.LoadAWSConfig(ctx)
+		if err != nil {
+			log.Fatalf("unable to load SDK config, %v", err)
+		}
+		dynamoClient = dynamodb.NewFromConfig(cfg)
+		snsClient = sns.NewFromConfig(cfg)
 	}
-
-	dynamoClient := dynamodb.NewFromConfig(cfg)
-	snsClient := sns.NewFromConfig(cfg)
 
 	var data CommentPageData
 
@@ -144,6 +160,7 @@ func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest
 		log.Println("processing GET")
 		data.PostTitle = request.QueryStringParameters["title"]
 		data.PostOrigin = request.QueryStringParameters["origin"]
+		data.Private = request.QueryStringParameters["private"] == "true"
 		url, err := url.Parse(data.PostOrigin)
 		if err == nil {
 			data.Page = url.Path
@@ -158,6 +175,7 @@ func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest
 		data.Email = values.Get("email")
 		data.Comment = values.Get("comment")
 		data.Honeypot = values.Get("website")
+		data.Private = values.Get("private") == "true"
 		data.ClientIP = request.RequestContext.Identity.SourceIP
 		data.UserAgent = request.RequestContext.Identity.UserAgent
 		data.Referrer = request.Headers["referer"]

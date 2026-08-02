@@ -16,25 +16,38 @@ import (
 
 // CommentItem is what is queried and displayed
 type CommentItem struct {
-	Date    string `json:"date" dynamodbav:"date"`
-	Author  string `json:"author" dynamodbav:"author"`
-	Content string `json:"content" dynamodbav:"content"`
+	Date       string `json:"date" dynamodbav:"date"`
+	Author     string `json:"author" dynamodbav:"author"`
+	Content    string `json:"content" dynamodbav:"content"`
+	UserID     string `json:"user_id" dynamodbav:"user_id"`
+	Verified   bool   `json:"verified" dynamodbav:"verified"`
+	ProfileURL string `json:"profile_url,omitempty" dynamodbav:"profile_url,omitempty"`
+}
+
+type DynamoQueryAPI interface {
+	Query(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
 }
 
 // Query DynamoDB table for comments on a given page
-func Query(ctx context.Context, svc *dynamodb.Client, page string) ([]CommentItem, error) {
+func Query(ctx context.Context, svc DynamoQueryAPI, page string) ([]CommentItem, error) {
 	input := &dynamodb.QueryInput{
 		TableName:              aws.String("endgameviable_comments"),
-		IndexName:              aws.String("page-index"),
+		IndexName:              aws.String("page-index-v3"),
 		KeyConditionExpression: aws.String("page = :id"),
-		ProjectionExpression:   aws.String("#dt, #au, #co"),
+		FilterExpression:       aws.String("(attribute_not_exists(imported) OR imported = :false_val) AND (attribute_not_exists(#pv) OR #pv = :false_val)"),
+		ProjectionExpression:   aws.String("#dt, #au, #co, #ui, #ve, #pu"),
 		ExpressionAttributeNames: map[string]string{
-			"#dt": "date", // reserved word
+			"#dt": "date",    // reserved word
 			"#au": "author",
 			"#co": "content", // reserved word
+			"#pv": "private", // reserved word
+			"#ui": "user_id",
+			"#ve": "verified",
+			"#pu": "profile_url",
 		},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":id": &types.AttributeValueMemberS{Value: page},
+			":id":        &types.AttributeValueMemberS{Value: page},
+			":false_val": &types.AttributeValueMemberBOOL{Value: false},
 		},
 	}
 

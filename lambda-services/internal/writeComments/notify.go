@@ -10,7 +10,7 @@ import (
 )
 
 // sendCommentNotification sends a comment received message to an SNS topic
-func sendCommentNotification(ctx context.Context, snsClient *sns.Client, data common.CommentEntryData) error {
+func sendCommentNotification(ctx context.Context, snsClient snsService, data common.CommentEntryData) error {
 	// Retrieve the SNS topic ARN from environment variables
 	topicArn := common.GetEnvVar("NOTIFICATION_TOPIC_ARN", "")
 

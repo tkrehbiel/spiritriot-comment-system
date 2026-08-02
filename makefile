@@ -21,3 +21,9 @@ web:
 	cp ${ASSETS}/css/comments.css ${HUGO}/css
 	cp ${ASSETS}/js/comments.js ${HUGO}/js
 	hugo server --source ./hugo-sample
+
+show-comments:
+	AWS_PAGER="" aws dynamodb scan --table-name endgameviable_comments
+
+show-users:
+	AWS_PAGER="" aws dynamodb scan --table-name endgameviable_users

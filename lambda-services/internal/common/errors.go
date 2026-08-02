@@ -25,3 +25,8 @@ func (e *MultiError) Get() error {
 		return nil
 	}
 }
+
+// Unwrap returns the wrapped underlying errors
+func (e *MultiError) Unwrap() []error {
+	return e.errors
+}

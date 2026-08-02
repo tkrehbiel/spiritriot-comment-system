@@ -26,7 +26,7 @@ func validateComment(data common.CommentEntryData) error {
 	if data.Name == "" {
 		errors.Add(fmt.Errorf("name missing"))
 	}
-	if data.Email == "" {
+	if data.Email == "" && data.IndieAuthToken == "" && data.MastodonToken == "" {
 		errors.Add(fmt.Errorf("email missing"))
 	}
 	if data.Comment == "" {

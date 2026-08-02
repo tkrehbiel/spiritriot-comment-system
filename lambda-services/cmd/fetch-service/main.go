@@ -6,20 +6,21 @@ import (
 	"fmt"
 	"log"
 
+	"endgameviable-comment-services/internal/common"
 	"endgameviable-comment-services/internal/readComments"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
 
-var baseHeaders = map[string]string{
-	"Content-Type":                 "application/json",
-	"Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
-	"Access-Control-Allow-Methods": "GET, OPTIONS",
-	"Access-Control-Allow-Origin":  "*",
+
+
+type dynamoQueryAPI interface {
+	Query(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
 }
+
+var dynamoClient dynamoQueryAPI
 
 func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	page := request.QueryStringParameters["page"]
@@ -27,16 +28,17 @@ func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest
 		return errorResponse("invalid page"), nil
 	}
 
-	log.Println("loading config")
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
-	if err != nil {
-		return errorResponse(fmt.Sprintf("error loading aws config: %v", err)), nil
+	if dynamoClient == nil {
+		log.Println("loading config")
+		cfg, err := common.LoadAWSConfig(ctx)
+		if err != nil {
+			return errorResponse(fmt.Sprintf("error loading aws config: %v", err)), nil
+		}
+		dynamoClient = dynamodb.NewFromConfig(cfg)
 	}
 
-	svc := dynamodb.NewFromConfig(cfg)
-
 	log.Printf("fetching comments for %s", page)
-	comments, err := readComments.Query(ctx, svc, page)
+	comments, err := readComments.Query(ctx, dynamoClient, page)
 	if err != nil {
 		return errorResponse(fmt.Sprintf("error getting comments: %v", err)), nil
 	}
@@ -49,7 +51,7 @@ func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: 200,
-		Headers:    baseHeaders,
+		Headers:    common.GetCORSHeaders("GET, OPTIONS"),
 		Body:       string(responseBody),
 	}, nil
 }
@@ -57,7 +59,7 @@ func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest
 func errorResponse(err string) events.APIGatewayProxyResponse {
 	return events.APIGatewayProxyResponse{
 		StatusCode: 500,
-		Headers:    baseHeaders,
+		Headers:    common.GetCORSHeaders("GET, OPTIONS"),
 		Body:       err,
 	}
 }

@@ -40,7 +40,7 @@ func TestGetUser_Found(t *testing.T) {
 
 	ctx := context.TODO()
 
-	expectedAccount := UserAccount{Author: "testUser"}
+	expectedAccount := UserAccount{Author: "testUser", ProfileURL: "https://example.com/profile"}
 	item, _ := attributevalue.MarshalMap(expectedAccount)
 
 	mockSvc.On("GetItem", ctx, mock.Anything, mock.Anything).Return(&dynamodb.GetItemOutput{
@@ -95,7 +95,7 @@ func TestPutUser_Success(t *testing.T) {
 	mockSvc := new(MockDynamoDBClient)
 
 	ctx := context.TODO()
-	account := UserAccount{Author: "testUser", AuthorID: "email:test@example.com"}
+	account := UserAccount{Author: "testUser", UserID: "some-uuid", AuthorID: "email:test@example.com", ProfileURL: "https://example.com/profile"}
 
 	mockSvc.On("PutItem", ctx, mock.Anything, mock.Anything).Return(&dynamodb.PutItemOutput{}, nil)
 
@@ -112,7 +112,7 @@ func TestPutUser_PutItemError(t *testing.T) {
 	mockSvc := new(MockDynamoDBClient)
 
 	ctx := context.TODO()
-	account := UserAccount{Author: "testUser", AuthorID: "email:test@example.com"}
+	account := UserAccount{Author: "testUser", UserID: "some-uuid", AuthorID: "email:test@example.com"}
 
 	mockSvc.On("PutItem", ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("DynamoDB error"))
 

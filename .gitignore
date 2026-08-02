@@ -5,3 +5,4 @@
 env.makefile
 hugo.toml
 **/public/
+*.out
