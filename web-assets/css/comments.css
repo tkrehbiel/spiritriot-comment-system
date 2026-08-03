@@ -41,6 +41,7 @@
 .spiritriot-google-btn-container {
   display: inline-block;
   min-height: 40px;
+  color-scheme: light;
 }
 
 .spiritriot-button-mastodon {
