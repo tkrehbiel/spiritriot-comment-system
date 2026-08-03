@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os"
 	"testing"
 
-	"endgameviable-comment-services/internal/readComments"
+	"spiritriot-comment-services/internal/readComments"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -14,6 +15,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func init() {
+	os.Setenv("DYNAMO_COMMENT_TABLE", "test_comments")
+}
 
 type MockDynamoQuery struct {
 	mock.Mock

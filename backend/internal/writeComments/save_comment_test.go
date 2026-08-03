@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"endgameviable-comment-services/internal/common"
+	"spiritriot-comment-services/internal/common"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -20,6 +20,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func init() {
+	os.Setenv("WEBSITE_URL", "https://example.com")
+	os.Setenv("MASTODON_CLIENT_NAME", "Test Client Name")
+	os.Setenv("DYNAMO_MASTODON_CLIENTS_TABLE", "test_mastodon_clients")
+}
 
 type MockSNSService struct {
 	mock.Mock

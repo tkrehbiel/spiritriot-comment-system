@@ -31,8 +31,8 @@ def scan_all_items(table):
 
 def migrate():
     db = get_dynamo_resource()
-    user_table_name = os.environ.get("DYNAMO_USER_TABLE", "endgameviable_users")
-    comment_table_name = os.environ.get("DYNAMO_COMMENT_TABLE", "endgameviable_comments")
+    user_table_name = os.environ.get("DYNAMO_USER_TABLE", "spiritriot_users")
+    comment_table_name = os.environ.get("DYNAMO_COMMENT_TABLE", "spiritriot_comments")
     
     user_table = db.Table(user_table_name)
     comment_table = db.Table(comment_table_name)

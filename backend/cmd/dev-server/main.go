@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
@@ -12,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"endgameviable-comment-services/internal/common"
-	"endgameviable-comment-services/internal/readComments"
-	"endgameviable-comment-services/internal/writeComments"
+	"spiritriot-comment-services/internal/common"
+	"spiritriot-comment-services/internal/readComments"
+	"spiritriot-comment-services/internal/writeComments"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -42,6 +43,17 @@ func main() {
 	}
 
 	http.HandleFunc("/comment", handleComment)
+	http.HandleFunc("/comment-page", handleCommentPage)
+	http.HandleFunc("/css/comments.css", func(w http.ResponseWriter, r *http.Request) {
+		content, err := os.ReadFile("../frontend/client-assets/css/comments.css")
+		if err != nil {
+			log.Printf("Error reading CSS file: %v", err)
+			http.Error(w, "File not found", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		w.Write(content)
+	})
 	http.HandleFunc("/config", handleConfig)
 	http.HandleFunc("/comments", handleComments)
 	http.HandleFunc("/auth/indieauth", handleIndieAuthInit)
@@ -289,7 +301,7 @@ func handleIndieAuthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwtSecret := common.GetEnvVar("JWT_SECRET", "local-development-secret-key-12345")
+	jwtSecret := common.GetEnvVar("JWT_SECRET", "")
 	token, err := writeComments.SignIndieAuthToken(verifiedMe, jwtSecret)
 	if err != nil {
 		http.Error(w, "signing failed", http.StatusInternalServerError)
@@ -543,7 +555,7 @@ func handleMastodonCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwtSecret := common.GetEnvVar("JWT_SECRET", "local-development-secret-key-12345")
+	jwtSecret := common.GetEnvVar("JWT_SECRET", "")
 	token, err := writeComments.SignMastodonToken(profileURL, jwtSecret)
 	if err != nil {
 		log.Printf("SignMastodonToken failed: %v", err)
@@ -682,3 +694,215 @@ func handleIndieAuthPrompt(w http.ResponseWriter, r *http.Request) {
 </body>
 </html>`))
 }
+
+const htmlTemplate = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>{{ .PageTitle }}</title>
+{{ with .CSS }}<link rel="stylesheet" href="{{ . }}">{{ end }}
+</head>
+<body>
+
+<main>
+<div class="u-wrapper">
+<div class="u-padding">
+
+<h1>{{ .PageTitle }}</h1>
+<h2>RE: <a href="{{ .PostOrigin }}">{{ .PostTitle }}</a></h2>
+
+<p><i>This is a tiny serverless web page for viewing
+and entering blog comments without Javascript.
+It's on a separate page on a different domain
+due to the fickle nature of technology
+and the static nature of my blog. Basically,
+it allows dynamic page generation.</i></p>
+
+<div id="commentsection">
+
+<div id="comments">
+	{{ with .Comments }}
+	<h3>Recent Comments</h3>
+		{{ range . }}
+		<p class="comment">
+			<span class="author">{{ .Author }}</span>
+			<span class="datetime">{{ .Date }}</span>
+			{{ .Content }}
+		</p>
+		{{ end }}
+	{{ else }}
+	<p>No comments yet.</p>
+	{{ end }}
+</div>
+
+{{ with .Response }}
+<div id="comment-response"><p>{{ . }}</p></div>
+{{ end }}
+
+<div id="comment-form">
+{{ with .CommentEntryData }}
+<form method="POST" action="#comment-form" class="spiritriot-form">
+	<div class="spiritriot-form-grid">
+		<div class="spiritriot-field">
+			<label for="comment-author">Name:</label>
+			<input type="text" id="comment-author" name="name" class="spiritriot-input" value="{{ .Name }}" required>
+		</div>
+		<div class="spiritriot-field">
+			<label for="comment-email">Email:</label>
+			<input type="text" id="comment-email" name="email" class="spiritriot-input" value="{{ .Email }}" required>
+		</div>
+	</div>
+
+	<div class="spiritriot-field">
+		<label for="comment-content">Comment (plain text please):</label>
+		<textarea id="comment-content" name="comment" class="spiritriot-textarea" rows="4" required></textarea>
+	</div>
+
+	<div style="display:none;">
+		<input type="text" id="website" name="website" value="">
+		<input type="text" id="page" name="page" value="{{ .Page }}">
+		<input type="text" id="origin" name="origin" value="{{ .PostOrigin }}">
+		<input type="text" id="title" name="title" value="{{ .PostTitle }}">
+		{{ if .Private }}<input type="hidden" name="private" value="true">{{ end }}
+	</div>
+
+	<button type="submit" class="spiritriot-button-primary">Submit</button>
+</form>
+{{ end }}
+</div>
+
+</div>
+
+</div>
+</div>
+</main>
+
+</body>
+</html>`
+
+const CookieAge = 60 * 60 * 24 * 90 // 90 days
+
+type CommentPageData struct {
+	common.CommentEntryData
+	Comments []readComments.CommentItem
+	Response string
+	PageTitle string
+	CSS string
+}
+
+func handleCommentPage(w http.ResponseWriter, r *http.Request) {
+	if setupCORS(w, r) {
+		return
+	}
+
+	ctx := context.Background()
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
+	if err != nil {
+		log.Printf("Error loading AWS config: %v", err)
+		http.Error(w, "AWS config error", http.StatusInternalServerError)
+		return
+	}
+	dynamoClient := dynamodb.NewFromConfig(cfg)
+	snsClient := sns.NewFromConfig(cfg)
+
+	var data CommentPageData
+	data.PageTitle = os.Getenv("HTML_TITLE")
+	if data.PageTitle == "" {
+		data.PageTitle = "Local Comments"
+	}
+	data.CSS = os.Getenv("HTML_CSS")
+	if data.CSS == "" {
+		data.CSS = "http://localhost:8080/css/comments.css"
+	}
+
+	if cookieName, err := r.Cookie("name"); err == nil {
+		data.Name = cookieName.Value
+	}
+	if cookieEmail, err := r.Cookie("email"); err == nil {
+		data.Email = cookieEmail.Value
+	}
+
+	if r.Method == "GET" {
+		log.Println("processing GET in local page-service")
+		data.PostTitle = r.URL.Query().Get("title")
+		data.PostOrigin = r.URL.Query().Get("origin")
+		data.Private = r.URL.Query().Get("private") == "true"
+		urlParsed, err := url.Parse(data.PostOrigin)
+		if err == nil {
+			data.Page = urlParsed.Path
+		}
+	} else if r.Method == "POST" {
+		log.Println("processing POST in local page-service")
+		err := r.ParseForm()
+		if err != nil {
+			log.Printf("Error parsing form: %v", err)
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+		data.PostTitle = r.FormValue("title")
+		data.PostOrigin = r.FormValue("origin")
+		data.Page = r.FormValue("page")
+		data.Name = r.FormValue("name")
+		data.Email = r.FormValue("email")
+		data.Comment = r.FormValue("comment")
+		data.Honeypot = r.FormValue("website")
+		data.Private = r.FormValue("private") == "true"
+
+		clientIP := r.Header.Get("X-Forwarded-For")
+		if clientIP == "" {
+			clientIP = r.RemoteAddr
+		}
+		data.ClientIP = clientIP
+		data.UserAgent = r.UserAgent()
+		data.Referrer = r.Referer()
+
+		allowedReferrers := os.Getenv("HTTP_ALLOWED_REFERRERS")
+		if !common.ValidateReferrer(data.Referrer, allowedReferrers) {
+			log.Printf("Referrer not allowed: %s (Allowed: %s)", data.Referrer, allowedReferrers)
+		}
+
+		err = writeComments.SaveComment(ctx, dynamoClient, snsClient, data.CommentEntryData)
+		if err != nil {
+			log.Printf("error posting comment: %v", err)
+			data.Response = err.Error()
+		} else {
+			data.Response = "Comment submitted successfully."
+		}
+	}
+
+	if data.PostTitle == "" {
+		data.PostTitle = data.PostOrigin
+	}
+
+	comments, err := readComments.Query(ctx, dynamoClient, data.Page)
+	if err == nil {
+		data.Comments = comments
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name: "name",
+		Value: data.Name,
+		Path: "/",
+		MaxAge: CookieAge,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name: "email",
+		Value: data.Email,
+		Path: "/",
+		MaxAge: CookieAge,
+	})
+
+	t := template.Must(template.New("webpage").Parse(htmlTemplate))
+	w.Header().Set("Content-Type", "text/html")
+
+	sb := &strings.Builder{}
+	err = t.Execute(sb, data)
+	if err != nil {
+		w.Write([]byte(fmt.Sprintf("Error rendering template: %s", err)))
+	} else {
+		w.Write([]byte(sb.String()))
+	}
+}
+

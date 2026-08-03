@@ -1,71 +1,418 @@
+/* SpiritRiot Comment System Design Tokens */
+:root {
+  --sr-font-family: var(--font-body, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+  --sr-bg-card: var(--color-card-bg, #ffffff);
+  --sr-bg-input: var(--color-bg, #ffffff);
+  --sr-color-primary: var(--color-brand, #2563eb);
+  --sr-color-primary-hover: var(--color-brand, #1d4ed8);
+  --sr-color-text: var(--color-text, #1f2937);
+  --sr-color-muted: var(--color-muted, #6b7280);
+  --sr-color-border: var(--color-border, #e5e7eb);
+  --sr-color-focus-ring: rgba(147, 51, 234, 0.15); /* custom translucent violet focus matching blog theme */
+  --sr-color-verified: var(--color-brand, #0284c7);
+  --sr-color-verified-bg: var(--color-highlight, #f0f9ff);
+  --sr-color-verified-border: var(--color-border, #bae6fd);
+}
+
 #commentsection, #comment-entry {
-    border: 2px solid gray;
-    border-radius: .5rem;
-    padding: 1rem;
+  border: 1px solid var(--sr-color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  font-family: var(--sr-font-family);
+  background-color: var(--sr-bg-card);
+  color: var(--sr-color-text);
+  box-shadow: 0 1px 3px var(--color-card-shadow, rgba(0, 0, 0, 0.05));
+}
+
+/* Comment Form styling */
+.spiritriot-form {
+  max-width: 100%;
+  margin-top: 1.5rem;
+}
+
+.spiritriot-auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.spiritriot-google-btn-container {
+  display: inline-block;
+  min-height: 40px;
+  color-scheme: light;
+}
+
+.spiritriot-button-mastodon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 40px;
+  padding: 0 1rem;
+  background-color: #563acc;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+  box-sizing: border-box;
+  min-width: 180px;
+}
+
+.spiritriot-button-mastodon:hover {
+  background-color: #482fbe;
+}
+
+.spiritriot-button-mastodon:active {
+  background-color: #3b259d;
+}
+
+.spiritriot-mastodon-icon {
+  flex-shrink: 0;
+}
+
+.spiritriot-button-indieauth {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 40px;
+  padding: 0 1rem;
+  background-color: #eab308;
+  color: #000000;
+  border: none;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+  box-sizing: border-box;
+  min-width: 180px;
+}
+
+.spiritriot-button-indieauth:hover {
+  background-color: #ca8a04;
+}
+
+.spiritriot-button-indieauth:active {
+  background-color: #a16207;
+}
+
+.spiritriot-auth-separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--sr-color-muted);
+  font-size: 0.85rem;
+  margin: 1.25rem 0;
+  width: 100%;
+}
+
+.spiritriot-auth-separator::before,
+.spiritriot-auth-separator::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--sr-color-border);
+}
+
+.spiritriot-auth-separator:not(:empty)::before {
+  margin-right: 0.75em;
+}
+
+.spiritriot-auth-separator:not(:empty)::after {
+  margin-left: 0.75em;
+}
+
+
+
+/* Signed in panel status */
+.spiritriot-auth-status {
+  padding: 0.75rem 1rem;
+  background-color: var(--sr-bg-input);
+  border: 1px solid var(--sr-color-border);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.95rem;
+}
+
+.spiritriot-auth-user-name a {
+  color: var(--sr-color-primary);
+  text-decoration: none;
+}
+
+.spiritriot-auth-user-name a:hover {
+  text-decoration: underline;
+}
+
+/* Signed in panel status themes */
+.spiritriot-auth-status.spiritriot-theme-mastodon {
+  background-color: #563acc;
+  color: #ffffff;
+  border-color: #482fbe;
+}
+
+.spiritriot-auth-status.spiritriot-theme-mastodon a {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.spiritriot-auth-status.spiritriot-theme-mastodon .spiritriot-button-text {
+  color: #e0e7ff;
+}
+
+.spiritriot-auth-status.spiritriot-theme-mastodon .spiritriot-button-text:hover {
+  color: #ffffff;
+}
+
+.spiritriot-auth-status.spiritriot-theme-indieauth {
+  background-color: #eab308;
+  color: #000000;
+  border-color: #ca8a04;
+}
+
+.spiritriot-auth-status.spiritriot-theme-indieauth a {
+  color: #000000;
+  text-decoration: underline;
+}
+
+.spiritriot-auth-status.spiritriot-theme-indieauth .spiritriot-button-text {
+  color: #1f2937;
+}
+
+.spiritriot-auth-status.spiritriot-theme-indieauth .spiritriot-button-text:hover {
+  color: #000000;
+}
+
+/* Default / Google status theme */
+.spiritriot-auth-status.spiritriot-theme-google {
+  background-color: #f3f4f6;
+  color: #1f2937;
+  border-color: #d1d5db;
+}
+
+@media (prefers-color-scheme: dark) {
+  .spiritriot-auth-status.spiritriot-theme-google {
+    background-color: #1f2937;
+    color: #f9fafb;
+    border-color: #4b5563;
   }
-  
-  .comment .author {
-    font-weight: bold;
+}
+
+.spiritriot-auth-status.spiritriot-theme-google a {
+  color: var(--sr-color-primary);
+}
+
+.spiritriot-auth-status.spiritriot-theme-google .spiritriot-button-text {
+  color: var(--sr-color-muted);
+}
+
+
+/* Grid layout for fields */
+.spiritriot-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 600px) {
+  .spiritriot-form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
-  
-  .comment .datetime {
-    font-size: 80%;
-    font-style: italic;
-  }
-  
-  /* General form styling */
-  form {
-    max-width: 500px;
-    padding: 2rem;
-    background-color: #f9f9f9;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    font-family: Arial, sans-serif;
-  }
-  
-  /* Input and textarea styling */
-  input[type="text"], input[type="email"], input[type="password"], textarea {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-    font-size: 16px;
-    font-family: inherit;
-    transition: border-color 0.3s ease;
-  }
-  
-  /* Focus state */
-  input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, textarea:focus {
-    border-color: #007BFF;
-    outline: none;
-  }
-  
-  /* Label styling */
-  label {
-    font-size: 14px;
-    margin-bottom: 5px;
-    display: block;
-    color: #333;
-  }
-  
-  /* Button styling */
-  button {
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    font-size: 16px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    width: 100%;
-    margin-top: 15px;
-  }
-  
-  /* Hover state for button */
-  button:hover {
-    background-color: #0056b3;
-  }
-  
+}
+
+.spiritriot-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.spiritriot-field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: var(--sr-color-text);
+}
+
+/* Modern inputs */
+.spiritriot-input,
+.spiritriot-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: var(--sr-bg-input);
+  color: var(--sr-color-text);
+  border: 1px solid var(--sr-color-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.spiritriot-input:focus,
+.spiritriot-textarea:focus {
+  border-color: var(--sr-color-primary);
+  box-shadow: 0 0 0 4px var(--sr-color-focus-ring);
+  outline: none;
+}
+
+/* Styled buttons */
+.spiritriot-button-primary {
+  background-color: var(--sr-color-primary);
+  color: var(--sr-bg-card); /* high-contrast readable text matching blog */
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  width: auto;
+  min-width: 120px;
+}
+
+.spiritriot-button-primary:hover {
+  opacity: 0.9;
+}
+
+.spiritriot-button-primary:disabled {
+  background-color: var(--sr-color-muted);
+  cursor: not-allowed;
+}
+
+.spiritriot-button-secondary {
+  background-color: transparent;
+  color: var(--sr-color-text);
+  border: 1px solid var(--sr-color-border);
+  padding: 0.65rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.spiritriot-button-secondary:hover {
+  background-color: var(--sr-bg-input);
+  border-color: var(--sr-color-muted);
+}
+
+.spiritriot-button-text {
+  background: transparent;
+  border: none;
+  color: var(--sr-color-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.spiritriot-button-text:hover {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+/* Comments List cards design */
+.spiritriot-comments-header {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: var(--sr-color-text);
+}
+
+.spiritriot-form-header {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 2px solid var(--sr-color-border);
+  padding-bottom: 0.5rem;
+  color: var(--sr-color-text);
+}
+
+.spiritriot-comment-intro {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--sr-color-text);
+}
+
+.spiritriot-comment-card {
+  background-color: var(--sr-bg-card);
+  border: 1px solid var(--sr-color-border);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 2px var(--color-card-shadow, rgba(0, 0, 0, 0.02));
+}
+
+.spiritriot-comment-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--sr-color-border);
+  padding-bottom: 0.35rem;
+}
+
+.spiritriot-comment-author-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.spiritriot-comment-author {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--sr-color-text);
+}
+
+.spiritriot-comment-author a {
+  color: var(--sr-color-text);
+  text-decoration: none;
+}
+
+.spiritriot-comment-author a:hover {
+  color: var(--sr-color-primary);
+  text-decoration: underline;
+}
+
+.spiritriot-comment-verified {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--sr-color-verified);
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+.spiritriot-comment-date {
+  font-size: 0.8rem;
+  color: var(--sr-color-muted);
+}
+
+.spiritriot-comment-card-body p {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--sr-color-text);
+  white-space: pre-wrap;
+}

@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"strings"
 
-	"endgameviable-comment-services/internal/common"
-	"endgameviable-comment-services/internal/readComments"
-	"endgameviable-comment-services/internal/writeComments"
+	"spiritriot-comment-services/internal/common"
+	"spiritriot-comment-services/internal/readComments"
+	"spiritriot-comment-services/internal/writeComments"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -67,15 +67,22 @@ it allows dynamic page generation.</i></p>
 
 <div id="comment-form">
 {{ with .CommentEntryData }}
-<form method="POST" action="#comment-form">
-	<label for="name">Name:</label>
-	<input type="text" id="comment-author" name="name" value="{{ .Name }}" required>
+<form method="POST" action="#comment-form" class="spiritriot-form">
+	<div class="spiritriot-form-grid">
+		<div class="spiritriot-field">
+			<label for="comment-author">Name:</label>
+			<input type="text" id="comment-author" name="name" class="spiritriot-input" value="{{ .Name }}" required>
+		</div>
+		<div class="spiritriot-field">
+			<label for="comment-email">Email:</label>
+			<input type="text" id="comment-email" name="email" class="spiritriot-input" value="{{ .Email }}" required>
+		</div>
+	</div>
 
-	<label for="email">Email:</label>
-	<input type="text" id="comment-email" name="email" value="{{ .Email }}" required>
-
-	<label for="comment">Comment (plain text please):</label>
-	<textarea id="comment-content" name="comment" rows="4" required></textarea>
+	<div class="spiritriot-field">
+		<label for="comment-content">Comment (plain text please):</label>
+		<textarea id="comment-content" name="comment" class="spiritriot-textarea" rows="4" required></textarea>
+	</div>
 
 	<div style="display:none;">
 		<input type="text" id="website" name="website" value="">
@@ -85,7 +92,7 @@ it allows dynamic page generation.</i></p>
 		{{ if .Private }}<input type="hidden" name="private" value="true">{{ end }}
 	</div>
 
-	<input type="submit" value="Submit">
+	<button type="submit" class="spiritriot-button-primary">Submit</button>
 </form>
 {{ end }}
 </div>
@@ -139,7 +146,7 @@ func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest
 
 	var data CommentPageData
 
-	data.PageTitle = common.GetEnvVar("HTML_TITLE", "No-Javascript Comments")
+	data.PageTitle = common.GetEnvVar("HTML_TITLE", "")
 	data.CSS = common.GetEnvVar("HTML_CSS", "")
 
 	if request.Headers["Cookie"] != "" {

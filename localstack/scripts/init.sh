@@ -1,9 +1,9 @@
 #!/bin/bash
 echo "Initializing DynamoDB tables..."
 
-# 1. Create endgameviable_comments table with page-index-v3 index
+# 1. Create spiritriot_comments table with page-index-v3 index
 awslocal dynamodb create-table \
-    --table-name endgameviable_comments \
+    --table-name spiritriot_comments \
     --attribute-definitions \
         AttributeName=id,AttributeType=S \
         AttributeName=page,AttributeType=S \
@@ -25,18 +25,18 @@ awslocal dynamodb create-table \
     ]' \
     --billing-mode PAY_PER_REQUEST
 
-# 2. Create endgameviable_users table
+# 2. Create spiritriot_users table
 awslocal dynamodb create-table \
-    --table-name endgameviable_users \
+    --table-name spiritriot_users \
     --attribute-definitions \
         AttributeName=author,AttributeType=S \
     --key-schema \
         AttributeName=author,KeyType=HASH \
     --billing-mode PAY_PER_REQUEST
 
-# 3. Create endgameviable_mastodon_clients table
+# 3. Create spiritriot_mastodon_clients table
 awslocal dynamodb create-table \
-    --table-name endgameviable_mastodon_clients \
+    --table-name spiritriot_mastodon_clients \
     --attribute-definitions \
         AttributeName=instance_host,AttributeType=S \
     --key-schema \

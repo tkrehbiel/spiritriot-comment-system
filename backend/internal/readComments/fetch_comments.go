@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"endgameviable-comment-services/internal/common"
+	"spiritriot-comment-services/internal/common"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -31,7 +31,7 @@ type DynamoQueryAPI interface {
 // Query DynamoDB table for comments on a given page
 func Query(ctx context.Context, svc DynamoQueryAPI, page string) ([]CommentItem, error) {
 	input := &dynamodb.QueryInput{
-		TableName:              aws.String("endgameviable_comments"),
+		TableName:              aws.String(common.GetEnvVar("DYNAMO_COMMENT_TABLE", "")),
 		IndexName:              aws.String("page-index-v3"),
 		KeyConditionExpression: aws.String("page = :id"),
 		FilterExpression:       aws.String("(attribute_not_exists(imported) OR imported = :false_val) AND (attribute_not_exists(#pv) OR #pv = :false_val)"),

@@ -1,7 +1,7 @@
 package writeComments
 
 import (
-	"endgameviable-comment-services/internal/common"
+	"spiritriot-comment-services/internal/common"
 	"fmt"
 )
 

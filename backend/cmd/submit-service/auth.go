@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"endgameviable-comment-services/internal/common"
-	"endgameviable-comment-services/internal/writeComments"
+	"spiritriot-comment-services/internal/common"
+	"spiritriot-comment-services/internal/writeComments"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -23,7 +23,10 @@ func getHost(request events.APIGatewayProxyRequest) string {
 	if h, ok := request.Headers["host"]; ok {
 		return h
 	}
-	return "api.endgameviable.com"
+	if request.RequestContext.DomainName != "" {
+		return request.RequestContext.DomainName
+	}
+	return common.GetEnvVar("API_DOMAIN", "")
 }
 
 func handleMastodonPrompt(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -232,7 +235,7 @@ func handleMastodonCallback(ctx context.Context, request events.APIGatewayProxyR
 		return events.APIGatewayProxyResponse{StatusCode: 400, Body: "failed to verify credentials"}, nil
 	}
 
-	jwtSecret := common.GetEnvVar("JWT_SECRET", "local-development-secret-key-12345")
+	jwtSecret := common.GetEnvVar("JWT_SECRET", "")
 	token, err := writeComments.SignMastodonToken(profileURL, jwtSecret)
 	if err != nil {
 		log.Printf("SignMastodonToken failed: %v", err)
@@ -442,7 +445,7 @@ func handleIndieAuthCallback(ctx context.Context, request events.APIGatewayProxy
 		return events.APIGatewayProxyResponse{StatusCode: 400, Body: fmt.Sprintf("verification failed: %v", err)}, nil
 	}
 
-	jwtSecret := common.GetEnvVar("JWT_SECRET", "local-development-secret-key-12345")
+	jwtSecret := common.GetEnvVar("JWT_SECRET", "")
 	token, err := writeComments.SignIndieAuthToken(verifiedMe, jwtSecret)
 	if err != nil {
 		return events.APIGatewayProxyResponse{StatusCode: 500, Body: "signing failed"}, nil

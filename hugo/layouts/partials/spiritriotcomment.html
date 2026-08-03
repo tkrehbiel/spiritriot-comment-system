@@ -1,7 +1,7 @@
 <div id="spiritriot-live-comments"></div>
 <div id="comment-entry">
     <h3 class="spiritriot-form-header">Leave a Comment</h3>
-    <p class="spiritriot-comment-intro"><b>This is a homegrown DIY comment system I've been working on. It works but technically you're beta testing it. Good luck. <a href="https://comments.endgameviable.com?origin={{ .Permalink }}&title={{ .Title }}{{ if .Params.privatecomments }}&private=true{{ end }}" rel="nofollow">Go here to enter a comment on this post without Javascript</a></b>. <noscript>Or enable Javascript to see and submit comments right here.</noscript></p>
+    <p class="spiritriot-comment-intro"><b>This is a homegrown DIY comment system I've been working on. It works but technically you're beta testing it. Good luck. <a href="{{ .Site.Params.spiritriot.commentPageURL | default "https://comments.yourdomain.com" }}?origin={{ .Permalink }}&title={{ .Title }}{{ if .Params.privatecomments }}&private=true{{ end }}" rel="nofollow">Go here to enter a comment on this post without Javascript</a></b>. <noscript>Or enable Javascript to see and submit comments right here.</noscript></p>
 
-    <div id="spiritriot-form-container"{{ if .Params.privatecomments }} data-private="true"{{ end }}></div>
+    <div id="spiritriot-form-container"{{ if .Params.privatecomments }} data-private="true"{{ end }}{{ with .Site.Params.spiritriot.apiURL }} data-api-url="{{ . }}"{{ end }}></div>
 </div>

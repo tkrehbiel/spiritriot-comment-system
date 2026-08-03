@@ -3,7 +3,7 @@ package writeComments
 import (
 	"testing"
 
-	"endgameviable-comment-services/internal/common"
+	"spiritriot-comment-services/internal/common"
 
 	"github.com/stretchr/testify/assert"
 )

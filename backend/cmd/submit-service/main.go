@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	"endgameviable-comment-services/internal/common"
-	"endgameviable-comment-services/internal/writeComments"
+	"spiritriot-comment-services/internal/common"
+	"spiritriot-comment-services/internal/writeComments"
 
 	"strings"
 

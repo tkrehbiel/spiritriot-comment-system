@@ -3,6 +3,7 @@ package readComments
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -11,6 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func init() {
+	os.Setenv("DYNAMO_COMMENT_TABLE", "test_comments")
+}
 
 type MockDynamoQueryClient struct {
 	mock.Mock

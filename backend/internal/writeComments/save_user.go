@@ -2,7 +2,7 @@ package writeComments
 
 import (
 	"context"
-	"endgameviable-comment-services/internal/common"
+	"spiritriot-comment-services/internal/common"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"

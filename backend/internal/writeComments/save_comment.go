@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"endgameviable-comment-services/internal/common"
+	"spiritriot-comment-services/internal/common"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -103,7 +103,7 @@ func SaveComment(ctx context.Context, dynamoService dynamoService, snsClient sns
 		}
 		data.Verified = true
 	} else if data.MastodonToken != "" {
-		jwtSecret := common.GetEnvVar("JWT_SECRET", "local-development-secret-key-12345")
+		jwtSecret := common.GetEnvVar("JWT_SECRET", "")
 		verifiedIdentity, err := VerifyMastodonToken(data.MastodonToken, jwtSecret)
 		if err != nil {
 			return fmt.Errorf("mastodon token verification failed: %w", err)
@@ -132,7 +132,7 @@ func SaveComment(ctx context.Context, dynamoService dynamoService, snsClient sns
 		data.Verified = true
 		data.ProfileURL = verifiedIdentity
 	} else if data.IndieAuthToken != "" {
-		jwtSecret := common.GetEnvVar("JWT_SECRET", "local-development-secret-key-12345")
+		jwtSecret := common.GetEnvVar("JWT_SECRET", "")
 		verifiedIdentity, err := VerifyIndieAuthToken(data.IndieAuthToken, jwtSecret)
 		if err != nil {
 			return fmt.Errorf("indieauth token verification failed: %w", err)

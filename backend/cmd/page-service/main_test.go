@@ -13,6 +13,14 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func init() {
+	os.Setenv("DYNAMO_COMMENT_TABLE", "test_comments")
+	os.Setenv("DYNAMO_USER_TABLE", "test_users")
+	os.Setenv("HTTP_ALLOWED_REFERRERS", "http://localhost:1313")
+	os.Setenv("HTML_CSS", "comments.css")
+	os.Setenv("HTML_TITLE", "Comments")
+}
+
 type MockPageDynamo struct {
 	mock.Mock
 }

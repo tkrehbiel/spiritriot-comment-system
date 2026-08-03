@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"endgameviable-comment-services/internal/common"
+	"spiritriot-comment-services/internal/common"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -102,7 +102,7 @@ func VerifyMastodonToken(tokenString string, secret string) (string, error) {
 }
 
 func GetMastodonClient(ctx context.Context, svc dynamoService, instanceHost string) (MastodonClient, error) {
-	tableName := common.GetEnvVar(mastodonClientsTableVar, "endgameviable_mastodon_clients")
+	tableName := common.GetEnvVar(mastodonClientsTableVar, "")
 
 	var client MastodonClient
 
@@ -131,7 +131,7 @@ func GetMastodonClient(ctx context.Context, svc dynamoService, instanceHost stri
 }
 
 func PutMastodonClient(ctx context.Context, svc dynamoService, client MastodonClient) error {
-	tableName := common.GetEnvVar(mastodonClientsTableVar, "endgameviable_mastodon_clients")
+	tableName := common.GetEnvVar(mastodonClientsTableVar, "")
 
 	av, err := attributevalue.MarshalMap(client)
 	if err != nil {
@@ -168,11 +168,11 @@ func RegisterMastodonApp(ctx context.Context, instanceHost string, redirectURI s
 	registerURL := getMastodonURL(instanceHost, "/api/v1/apps")
 
 	data := url.Values{}
-	clientName := common.GetEnvVar("MASTODON_CLIENT_NAME", "SpiritRiot Comments")
+	clientName := common.GetEnvVar("MASTODON_CLIENT_NAME", "")
 	data.Set("client_name", clientName)
 	data.Set("redirect_uris", redirectURI)
 	data.Set("scopes", "read:accounts")
-	data.Set("website", "https://endgameviable.com")
+	data.Set("website", common.GetEnvVar("WEBSITE_URL", ""))
 
 	req, err := http.NewRequestWithContext(ctx, "POST", registerURL, strings.NewReader(data.Encode()))
 	if err != nil {

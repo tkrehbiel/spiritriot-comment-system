@@ -69,8 +69,6 @@ func (m *MockDynamoDB) PutItem(ctx context.Context, input *dynamodb.PutItemInput
 
 func TestGetAndPutMastodonClient(t *testing.T) {
 	os.Setenv("DYNAMO_MASTODON_CLIENTS_TABLE", "mastodon_clients")
-	defer os.Unsetenv("DYNAMO_MASTODON_CLIENTS_TABLE")
-
 	ctx := context.Background()
 	mockDb := new(MockDynamoDB)
 
@@ -113,8 +111,7 @@ func TestVerifyMastodonCredentials(t *testing.T) {
 }
 
 func TestRegisterMastodonApp(t *testing.T) {
-	os.Setenv("MASTODON_CLIENT_NAME", "Endgame Viable Comments")
-	defer os.Unsetenv("MASTODON_CLIENT_NAME")
+	os.Setenv("MASTODON_CLIENT_NAME", "Test Client Name")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "POST", r.Method)
@@ -122,7 +119,7 @@ func TestRegisterMastodonApp(t *testing.T) {
 
 		err := r.ParseForm()
 		assert.NoError(t, err)
-		assert.Equal(t, "Endgame Viable Comments", r.FormValue("client_name"))
+		assert.Equal(t, "Test Client Name", r.FormValue("client_name"))
 		assert.Equal(t, "https://example.com/callback", r.FormValue("redirect_uris"))
 
 		w.Header().Set("Content-Type", "application/json")

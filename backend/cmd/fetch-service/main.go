@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	"endgameviable-comment-services/internal/common"
-	"endgameviable-comment-services/internal/readComments"
+	"spiritriot-comment-services/internal/common"
+	"spiritriot-comment-services/internal/readComments"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"

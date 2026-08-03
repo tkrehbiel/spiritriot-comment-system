@@ -1,4 +1,4 @@
-module endgameviable-comment-services
+module spiritriot-comment-services
 
 go 1.21.5
 

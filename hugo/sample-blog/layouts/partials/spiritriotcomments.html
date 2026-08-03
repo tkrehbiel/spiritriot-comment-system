@@ -26,6 +26,6 @@
     <div id="comment-entry">
         <p><b><a href="{{ .Site.Params.commentUrl }}?origin={{ .Permalink }}&title={{ .Title }}" rel="nofollow">Go here to enter a comment on this post without Javascript</a></b>. <noscript>Or enable Javascript to see and submit comments right here.</noscript></p>
 
-        <div id="spiritriot-form-container"></div>
+        <div id="spiritriot-form-container"{{ with .Site.Params.apiUrl }} data-api-url="{{ . }}"{{ end }}></div>
     </div>
 </div>

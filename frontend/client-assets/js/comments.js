@@ -1,6 +1,23 @@
-const apiEndpoint = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:8080/'
-    : 'https://api.endgameviable.com/'; // TODO: configuration
+function getApiEndpoint() {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const localFallback = 'http://localhost:8080/';
+
+    const container = document.getElementById('spiritriot-form-container');
+    if (container && container.getAttribute('data-api-url')) {
+        let endpoint = container.getAttribute('data-api-url');
+        if (!endpoint.endsWith('/')) endpoint += '/';
+        return endpoint;
+    }
+
+    if (isLocal) {
+        return localFallback;
+    }
+
+    const errorMsg = 'SpiritRiot error: data-api-url attribute is missing on #spiritriot-form-container';
+    console.error(errorMsg);
+    throw new Error(errorMsg);
+}
+const apiEndpoint = getApiEndpoint();
 let googleClientId = '';
 
 const authorId = 'spiritriot-author';
