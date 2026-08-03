@@ -65,6 +65,8 @@ func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest
 	path = strings.TrimSuffix(path, "/")
 
 	switch path {
+	case "/config":
+		return handleConfig(ctx, request)
 	case "/auth/mastodon/prompt":
 		return handleMastodonPrompt(ctx, request)
 	case "/auth/mastodon/init":
@@ -134,6 +136,22 @@ func standardResponse(statusCode int, body string) events.APIGatewayProxyRespons
 		Headers:    common.GetCORSHeaders("GET, POST, OPTIONS"),
 		Body:       body,
 	}
+}
+
+func handleConfig(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	googleClientID := common.GetEnvVar("GOOGLE_CLIENT_ID", "")
+	configData := map[string]string{
+		"googleClientId": googleClientID,
+	}
+	bodyBytes, err := json.Marshal(configData)
+	if err != nil {
+		return standardResponse(500, fmt.Sprintf("error marshaling config: %v", err)), nil
+	}
+	return events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers:    common.GetCORSHeaders("GET, POST, OPTIONS"),
+		Body:       string(bodyBytes),
+	}, nil
 }
 
 func main() {

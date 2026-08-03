@@ -6,3 +6,5 @@ env.makefile
 hugo.toml
 **/public/
 *.out
+__pycache__/
+*.pyc

@@ -42,6 +42,7 @@ func main() {
 	}
 
 	http.HandleFunc("/comment", handleComment)
+	http.HandleFunc("/config", handleConfig)
 	http.HandleFunc("/comments", handleComments)
 	http.HandleFunc("/auth/indieauth", handleIndieAuthInit)
 	http.HandleFunc("/auth/indieauth/prompt", handleIndieAuthPrompt)
@@ -67,6 +68,25 @@ func setupCORS(w http.ResponseWriter, r *http.Request) bool {
 		return true
 	}
 	return false
+}
+
+func handleConfig(w http.ResponseWriter, r *http.Request) {
+	if setupCORS(w, r) {
+		return
+	}
+
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	googleClientID := common.GetEnvVar("GOOGLE_CLIENT_ID", "")
+	configData := map[string]string{
+		"googleClientId": googleClientID,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(configData)
 }
 
 func handleComment(w http.ResponseWriter, r *http.Request) {

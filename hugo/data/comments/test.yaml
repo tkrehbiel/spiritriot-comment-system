@@ -1,0 +1,10 @@
+/dev/2024/08/new-comment-system/:
+  - date: 2024-09-08T13:48:54Z
+    author: UV-Tester
+    email: endgameviable@gmail.com
+    comment: Hello this is a very simple plain text static comment. It was statically generated as part of the site build.
+/post/2024/09/comment-system/:
+  - date: 2024-09-08T13:51:54Z
+    author: UV-Tester
+    email: endgameviable@gmail.com
+    comment: This is another statically-generated comment, written in _Markdown_, so we have to remember **to process it as Markdown instead of plain text**. This was also statically generated as part of the site build. That part was easy. The hard part is figuring out how to download comments from the AWS Dynamo table to a file on my laptop.

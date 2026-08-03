@@ -1,0 +1,11 @@
+services:
+  localstack:
+    container_name: spiritriot-localstack
+    image: localstack/localstack:3.5
+    ports:
+      - "127.0.0.1:4566:4566"
+    environment:
+      - SERVICES=dynamodb,sns
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - "./scripts:/etc/localstack/init/ready.d"

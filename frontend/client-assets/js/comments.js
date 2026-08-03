@@ -1,7 +1,7 @@
 const apiEndpoint = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:8080/'
     : 'https://api.endgameviable.com/'; // TODO: configuration
-const googleClientId = '391758766657-o6rmsb31431m5g07e3ma49pc2h522ceo.apps.googleusercontent.com';
+let googleClientId = '';
 
 const authorId = 'spiritriot-author';
 const emailId = 'spiritriot-email';
@@ -602,16 +602,31 @@ function startup() {
     presetForm();
     checkExistingSessions();
 
-    loadGoogleScript().then(() => {
-        if (window.google) {
-            google.accounts.id.initialize({
-                client_id: googleClientId,
-                callback: handleGoogleCredentialResponse,
-                auto_select: false,
-            });
-            renderGoogleButton();
-        }
-    });
+    fetch(`${apiEndpoint}config`)
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Failed to fetch config');
+            }
+            return res.json();
+        })
+        .then(config => {
+            googleClientId = config.googleClientId;
+            if (googleClientId) {
+                loadGoogleScript().then(() => {
+                    if (window.google) {
+                        google.accounts.id.initialize({
+                            client_id: googleClientId,
+                            callback: handleGoogleCredentialResponse,
+                            auto_select: false,
+                        });
+                        renderGoogleButton();
+                    }
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Failed to load Google Client ID config:', err);
+        });
 
     const container = document.getElementById(containerId);
     const isPrivate = container && container.getAttribute('data-private') === 'true';
