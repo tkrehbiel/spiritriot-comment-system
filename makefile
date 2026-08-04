@@ -14,21 +14,6 @@ ${ASSETS}/css/comments.min.css: ${ASSETS}/css/comments.css
 ${ASSETS}/js/comments.min.js: ${ASSETS}/js/comments.js
 	minify ${ASSETS}/js/comments.js > ${ASSETS}/js/comments.min.js
 
-# deploy assets to s3 bucket
-deploy-s3-assets: ${ASSETS}/css/comments.min.css ${ASSETS}/js/comments.min.js
-	aws s3 sync ${ASSETS}/css/ ${S3_BUCKET}/css/
-	aws s3 sync ${ASSETS}/js/ ${S3_BUCKET}/js/
-	@echo "now go invalidate the cache in CloudFront"
-
-deploy: deploy-s3-assets
-	$(MAKE) -C backend deploy-fetch deploy-page deploy-submit
-	@if [ -n "$(CLOUDFRONT_DISTRIBUTION_ID)" ]; then \
-		echo "Invalidating CloudFront cache for ID $(CLOUDFRONT_DISTRIBUTION_ID)..."; \
-		AWS_PAGER="" aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_DISTRIBUTION_ID) --paths "/js/comments.js" "/js/comments.min.js" "/css/comments.css" "/css/comments.min.css"; \
-	else \
-		echo "CLOUDFRONT_DISTRIBUTION_ID not set. Skipping CloudFront invalidation."; \
-	fi
-
 # startup a local hugo server for testing
 web:
 	cp ${ASSETS}/css/comments.css ${HUGO}/css/
@@ -50,6 +35,7 @@ api:
 	WEBSITE_URL="http://localhost:1313" \
 	GOOGLE_CLIENT_ID="$(GOOGLE_CLIENT_ID)" \
 	JWT_SECRET="local-development-secret-key-12345" \
+	AKISMET_API_KEY="$(AKISMET_API_KEY)" \
 	DYNAMO_COMMENT_TABLE="spiritriot_comments" \
 	DYNAMO_USER_TABLE="spiritriot_users" \
 	DYNAMO_MASTODON_CLIENTS_TABLE="spiritriot_mastodon_clients" \
@@ -107,4 +93,4 @@ empty-db-local:
 	[t_clients.delete_item(Key={'instance_host': i['instance_host']}) for i in t_clients.scan().get('Items', [])]"
 	@echo "Database tables emptied successfully."
 
-.PHONY: start stop api migrate-local dev-local show-comments-local show-users-local show-mastodon-clients-local empty-db-local web deploy-s3-assets deploy
+.PHONY: start stop api migrate-local dev-local show-comments-local show-users-local show-mastodon-clients-local empty-db-local web

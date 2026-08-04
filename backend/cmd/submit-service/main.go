@@ -48,7 +48,7 @@ var (
 )
 
 func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	log.Printf("%v+", request)
+	log.Printf("Received submit-service request: Path=%s, Method=%s, ClientIP=%s", request.Path, request.HTTPMethod, request.RequestContext.Identity.SourceIP)
 
 	if request.HTTPMethod == "OPTIONS" {
 		return events.APIGatewayProxyResponse{
@@ -105,7 +105,7 @@ func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest
 	}
 
 	if !common.ValidateReferrer(data.Referrer, common.GetEnvVar("HTTP_ALLOWED_REFERRERS", "")) {
-		log.Printf("referrer missing or not allowed")
+		log.Printf("Referrer check failed: Referer=%q (Allowed: %q)", data.Referrer, common.GetEnvVar("HTTP_ALLOWED_REFERRERS", ""))
 		return standardResponse(403, "comment rejected"), nil
 	}
 

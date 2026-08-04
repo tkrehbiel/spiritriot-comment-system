@@ -3,7 +3,6 @@ package writeComments
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -39,6 +38,7 @@ type CommentSaveItem struct {
 	Private    bool   `json:"private,omitempty" dynamodbav:"private,omitempty"`
 	Verified   bool   `json:"verified" dynamodbav:"verified"`
 	ProfileURL string `json:"profile_url,omitempty" dynamodbav:"profile_url,omitempty"`
+	Moderate   bool   `json:"moderate,omitempty" dynamodbav:"moderate,omitempty"`
 }
 
 type snsService interface {
@@ -46,17 +46,35 @@ type snsService interface {
 }
 
 func SaveComment(ctx context.Context, dynamoService dynamoService, snsClient snsService, data common.CommentEntryData) error {
-	log.Println(data)
+	common.LogWithCtx(ctx, "Received comment submission: Author=%q, Email=%q, Page=%q, Origin=%q, Referer=%q, ClientIP=%q, UserAgent=%q, HoneypotLen=%d",
+		data.Name, data.Email, data.Page, data.PostOrigin, data.Referrer, data.ClientIP, data.UserAgent, len(data.Honeypot))
 
-	log.Println("validating form")
+	common.LogWithCtx(ctx, "validating form")
 	if err := validateComment(data); err != nil {
-		log.Printf("form validation failed: %v", err)
+		common.LogWithCtx(ctx, "form validation failed: %v", err)
 		return fmt.Errorf("invalid comment data: %v", err)
+	}
+
+	// Flag for moderation if honeypot is filled OR if Akismet flags it as spam
+	var moderate bool
+	if data.Honeypot != "" {
+		common.LogWithCtx(ctx, "Honeypot field was filled (%q). Flagging comment by %q for moderation.", data.Honeypot, data.Name)
+		moderate = true
+	} else {
+		isSpam, err := CheckAkismet(ctx, data)
+		if err != nil {
+			common.LogWithCtx(ctx, "Akismet check failed for comment by %q: %v. Continuing without flagging.", data.Name, err)
+		} else if isSpam {
+			common.LogWithCtx(ctx, "Akismet flagged comment by %q as spam. Flagging for moderation.", data.Name)
+			moderate = true
+		} else {
+			common.LogWithCtx(ctx, "Akismet verified comment by %q as ham (not spam).", data.Name)
+		}
 	}
 
 	account, err := getUser(ctx, dynamoService, data.Name)
 	if err != nil {
-		log.Printf("error fetching user account: %v", err)
+		common.LogWithCtx(ctx, "error fetching user account for %q: %v", data.Name, err)
 	}
 
 	var accountID string
@@ -78,7 +96,7 @@ func SaveComment(ctx context.Context, dynamoService dynamoService, snsClient sns
 			} else if account.AuthorID == fmt.Sprintf("email:%s", claims.Email) {
 				// User email matches existing legacy guest account email - check migration consent
 				if data.MigrateAccount {
-					log.Printf("Migrating account for user %s to Google ID", data.Name)
+					common.LogWithCtx(ctx, "Migrating account for user %s to Google ID", data.Name)
 					account.AuthorID = accountID
 					if err := putUser(ctx, dynamoService, account); err != nil {
 						return fmt.Errorf("failed to upgrade user account: %w", err)
@@ -92,13 +110,13 @@ func SaveComment(ctx context.Context, dynamoService dynamoService, snsClient sns
 			}
 		} else {
 			userID = uuid.NewString()
-			log.Println("saving new Google-verified user to dynamodb")
+			common.LogWithCtx(ctx, "saving new Google-verified user to dynamodb")
 			if err := putUser(ctx, dynamoService, UserAccount{
 				Author:   data.Name,
 				UserID:   userID,
 				AuthorID: accountID,
 			}); err != nil {
-				log.Printf("error saving user account: %v", err)
+				common.LogWithCtx(ctx, "error saving user account: %v", err)
 			}
 		}
 		data.Verified = true
@@ -119,14 +137,14 @@ func SaveComment(ctx context.Context, dynamoService dynamoService, snsClient sns
 			}
 		} else {
 			userID = uuid.NewString()
-			log.Println("saving new Mastodon-verified user to dynamodb")
+			common.LogWithCtx(ctx, "saving new Mastodon-verified user to dynamodb")
 			if err := putUser(ctx, dynamoService, UserAccount{
 				Author:     data.Name,
 				UserID:     userID,
 				AuthorID:   accountID,
 				ProfileURL: verifiedIdentity,
 			}); err != nil {
-				log.Printf("error saving user account: %v", err)
+				common.LogWithCtx(ctx, "error saving user account: %v", err)
 			}
 		}
 		data.Verified = true
@@ -148,14 +166,14 @@ func SaveComment(ctx context.Context, dynamoService dynamoService, snsClient sns
 			}
 		} else {
 			userID = uuid.NewString()
-			log.Println("saving new IndieAuth-verified user to dynamodb")
+			common.LogWithCtx(ctx, "saving new IndieAuth-verified user to dynamodb")
 			if err := putUser(ctx, dynamoService, UserAccount{
 				Author:     data.Name,
 				UserID:     userID,
 				AuthorID:   accountID,
 				ProfileURL: verifiedIdentity,
 			}); err != nil {
-				log.Printf("error saving user account: %v", err)
+				common.LogWithCtx(ctx, "error saving user account: %v", err)
 			}
 		}
 		data.Verified = true
@@ -170,13 +188,13 @@ func SaveComment(ctx context.Context, dynamoService dynamoService, snsClient sns
 			userID = account.UserID
 		} else {
 			userID = uuid.NewString()
-			log.Println("saving legacy user to dynamodb")
+			common.LogWithCtx(ctx, "saving legacy user to dynamodb")
 			if err := putUser(ctx, dynamoService, UserAccount{
 				Author:   data.Name,
 				UserID:   userID,
 				AuthorID: accountID,
 			}); err != nil {
-				log.Printf("error saving user account: %v", err)
+				common.LogWithCtx(ctx, "error saving user account: %v", err)
 			}
 		}
 		data.Verified = false
@@ -184,20 +202,25 @@ func SaveComment(ctx context.Context, dynamoService dynamoService, snsClient sns
 
 	data.UserID = userID
 
-	log.Println("saving comment to dynamodb")
-	if err := putItem(ctx, dynamoService, data); err != nil {
+	common.LogWithCtx(ctx, "saving comment to dynamodb: Author=%q, Moderate=%t", data.Name, moderate)
+	if err := putItem(ctx, dynamoService, data, moderate); err != nil {
 		return fmt.Errorf("error saving comment: %v", err)
 	}
 
-	if err := sendCommentNotification(ctx, snsClient, data); err != nil {
-		log.Printf("error sending notification: %v", err)
+	// Skip sending notifications if the comment is flagged for moderation
+	if !moderate {
+		if err := sendCommentNotification(ctx, snsClient, data); err != nil {
+			common.LogWithCtx(ctx, "error sending notification: %v", err)
+		}
+	} else {
+		common.LogWithCtx(ctx, "Skipped SNS notification for moderated comment by %q", data.Name)
 	}
 
 	return nil
 }
 
 // putItem saves a comment to a dynamo table
-func putItem(ctx context.Context, svc dynamoService, data common.CommentEntryData) error {
+func putItem(ctx context.Context, svc dynamoService, data common.CommentEntryData, moderate bool) error {
 	commentTableName := common.GetEnvVar(commentTableVar, "")
 
 	item := CommentSaveItem{
@@ -211,6 +234,7 @@ func putItem(ctx context.Context, svc dynamoService, data common.CommentEntryDat
 		Private:    data.Private,
 		Verified:   data.Verified,
 		ProfileURL: data.ProfileURL,
+		Moderate:   moderate,
 	}
 
 	av, err := attributevalue.MarshalMap(item)

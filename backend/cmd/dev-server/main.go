@@ -102,6 +102,8 @@ func handleConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleComment(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Received submit-service request: Path=%s, Method=%s, ClientIP=%s", r.URL.Path, r.Method, r.RemoteAddr)
+
 	if setupCORS(w, r) {
 		return
 	}

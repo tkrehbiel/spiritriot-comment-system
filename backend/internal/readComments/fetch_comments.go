@@ -34,7 +34,7 @@ func Query(ctx context.Context, svc DynamoQueryAPI, page string) ([]CommentItem,
 		TableName:              aws.String(common.GetEnvVar("DYNAMO_COMMENT_TABLE", "")),
 		IndexName:              aws.String("page-index-v3"),
 		KeyConditionExpression: aws.String("page = :id"),
-		FilterExpression:       aws.String("(attribute_not_exists(imported) OR imported = :false_val) AND (attribute_not_exists(#pv) OR #pv = :false_val)"),
+		FilterExpression:       aws.String("(attribute_not_exists(imported) OR imported = :false_val) AND (attribute_not_exists(#pv) OR #pv = :false_val) AND (attribute_not_exists(#md) OR #md = :false_val)"),
 		ProjectionExpression:   aws.String("#dt, #au, #co, #ui, #ve, #pu"),
 		ExpressionAttributeNames: map[string]string{
 			"#dt": "date",    // reserved word
@@ -44,6 +44,7 @@ func Query(ctx context.Context, svc DynamoQueryAPI, page string) ([]CommentItem,
 			"#ui": "user_id",
 			"#ve": "verified",
 			"#pu": "profile_url",
+			"#md": "moderate",
 		},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":id":        &types.AttributeValueMemberS{Value: page},
@@ -59,7 +60,6 @@ func Query(ctx context.Context, svc DynamoQueryAPI, page string) ([]CommentItem,
 	}
 
 	log.Printf("returned item count: %d", result.Count)
-	log.Println(result.Items)
 
 	items := []CommentItem{}
 	for _, item := range result.Items {

@@ -45,6 +45,10 @@ environment_variables:
     required: false
     services: [page-service]
     description: "The HTML page title for the no-JS comment entry page."
+  - name: AKISMET_API_KEY
+    required: false
+    services: [submit-service, dev-server]
+    description: "The Akismet API key utilized for comments spam detection. If not set, checks are bypassed."
 
 hugo_site_params:
   - key: spiritriot.commentPageURL
@@ -76,6 +80,8 @@ These variables must be populated on the deployed AWS Lambda services (and in lo
 | `HTTP_ALLOWED_REFERRERS` | **Yes** | `submit-service`, `page-service` | Comma-separated list of allowed client origins. Requests with other referrers will be rejected with `403 Forbidden`. |
 | `HTML_CSS` | **Yes** | `page-service` | Public URL link to the main comments CSS layout stylesheet. |
 | `HTML_TITLE` | No | `page-service` | The header page title of the fallback comment entry form page. |
+| `AKISMET_API_KEY` | No | `submit-service` | The Akismet API key utilized for comments spam detection. If not set, checks are bypassed. |
+
 
 ---
 

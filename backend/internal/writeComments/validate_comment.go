@@ -32,9 +32,6 @@ func validateComment(data common.CommentEntryData) error {
 	if data.Comment == "" {
 		errors.Add(fmt.Errorf("comment missing"))
 	}
-	if data.Honeypot != "" {
-		errors.Add(fmt.Errorf("honeypot filled"))
-	}
 
 	// TODO: validate origin same as referrer
 	// TODO: check string lengths
@@ -42,3 +39,4 @@ func validateComment(data common.CommentEntryData) error {
 
 	return errors.Get()
 }
+

@@ -40,9 +40,7 @@ func TestValidateComment(t *testing.T) {
 	})
 
 	t.Run("Invalid comment - multiple errors", func(t *testing.T) {
-		data := common.CommentEntryData{
-			Honeypot: "not-empty",
-		}
+		data := common.CommentEntryData{}
 		err := validateComment(data)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "referrer missing")
@@ -53,6 +51,6 @@ func TestValidateComment(t *testing.T) {
 		assert.Contains(t, err.Error(), "name missing")
 		assert.Contains(t, err.Error(), "email missing")
 		assert.Contains(t, err.Error(), "comment missing")
-		assert.Contains(t, err.Error(), "honeypot filled")
 	})
 }
+
