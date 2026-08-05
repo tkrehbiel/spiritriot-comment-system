@@ -15,8 +15,8 @@ func sendCommentNotification(ctx context.Context, snsClient snsService, data com
 	topicArn := common.GetEnvVar("NOTIFICATION_TOPIC_ARN", "")
 
 	// Construct the message using environment variable and inputs
-	message := fmt.Sprintf("%s\n\n%s\n%s",
-		common.GetEnvVar("NOTIFICATION_HEADER", ""), data.Name, data.Comment)
+	message := fmt.Sprintf("%s\n\nPost: %s\nAuthor: %s\nComment:\n%s",
+		common.GetEnvVar("NOTIFICATION_HEADER", ""), data.PostOrigin, data.Name, data.Comment)
 
 	// Prepare the PublishInput parameters
 	params := &sns.PublishInput{
