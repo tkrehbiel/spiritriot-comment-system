@@ -608,12 +608,16 @@ function displayComments(comments) {
     }
 }
 
-function startup() {
+function loadCommentsSystem() {
     addForm();
-    document.getElementById('spiritriot-form').addEventListener('submit', handleSubmit);
-    document.getElementById('spiritriot-auth-signout').addEventListener('click', handleSignOut);
-    document.getElementById('spiritriot-indieauth-login-btn').addEventListener('click', handleIndieAuthLogin);
-    document.getElementById('spiritriot-mastodon-login-btn').addEventListener('click', handleMastodonLogin);
+    const form = document.getElementById('spiritriot-form');
+    if (form) form.addEventListener('submit', handleSubmit);
+    const signout = document.getElementById('spiritriot-auth-signout');
+    if (signout) signout.addEventListener('click', handleSignOut);
+    const indieauth = document.getElementById('spiritriot-indieauth-login-btn');
+    if (indieauth) indieauth.addEventListener('click', handleIndieAuthLogin);
+    const mastodon = document.getElementById('spiritriot-mastodon-login-btn');
+    if (mastodon) mastodon.addEventListener('click', handleMastodonLogin);
     window.addEventListener('message', handlePostMessage);
     
     presetForm();
@@ -649,6 +653,29 @@ function startup() {
     const isPrivate = container && container.getAttribute('data-private') === 'true';
     if (!isPrivate) {
         fetchComments();
+    }
+}
+
+function startup() {
+    const container = document.getElementById(containerId);
+    if (!container) return; // Exit early if comments form container is not present
+
+    // Lazy load the comment system when it is near the viewport
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    observer.disconnect();
+                    loadCommentsSystem();
+                }
+            });
+        }, {
+            rootMargin: '300px 0px' // Start loading when comments are within 300px of the viewport
+        });
+        observer.observe(container);
+    } else {
+        // Fallback for older browsers
+        loadCommentsSystem();
     }
 }
 
