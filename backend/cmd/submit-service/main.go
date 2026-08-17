@@ -104,8 +104,13 @@ func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest
 		MastodonToken:  form.MastodonToken,
 	}
 
-	if !common.ValidateReferrer(data.Referrer, common.GetEnvVar("HTTP_ALLOWED_REFERRERS", "")) {
-		log.Printf("Referrer check failed: Referer=%q (Allowed: %q)", data.Referrer, common.GetEnvVar("HTTP_ALLOWED_REFERRERS", ""))
+	allowedReferrers := common.GetEnvVar("HTTP_ALLOWED_REFERRERS", "")
+	if !common.ValidateReferrer(data.Referrer, allowedReferrers) {
+		log.Printf("Referrer check failed: Referer=%q (Allowed: %q)", data.Referrer, allowedReferrers)
+		return standardResponse(403, "comment rejected"), nil
+	}
+	if !common.ValidateReferrer(data.PostOrigin, allowedReferrers) {
+		log.Printf("PostOrigin check failed: PostOrigin=%q (Allowed: %q)", data.PostOrigin, allowedReferrers)
 		return standardResponse(403, "comment rejected"), nil
 	}
 

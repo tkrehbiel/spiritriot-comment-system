@@ -47,5 +47,11 @@ func GetEnvVar(name string, def string) string {
 
 // LoadAWSConfig loads the default AWS SDK configuration
 func LoadAWSConfig(ctx context.Context) (aws.Config, error) {
+	if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") == "" {
+		if os.Getenv("AWS_ENDPOINT_URL") == "" {
+			log.Println("Local environment detected and AWS_ENDPOINT_URL is empty. Defaulting to LocalStack at http://localhost:4566 to prevent production tampering.")
+			os.Setenv("AWS_ENDPOINT_URL", "http://localhost:4566")
+		}
+	}
 	return config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
 }

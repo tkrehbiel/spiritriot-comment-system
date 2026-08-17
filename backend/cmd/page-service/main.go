@@ -186,12 +186,19 @@ func lambdaHandlerWeb(ctx context.Context, request events.APIGatewayProxyRequest
 		data.ClientIP = request.RequestContext.Identity.SourceIP
 		data.UserAgent = request.RequestContext.Identity.UserAgent
 		data.Referrer = request.Headers["referer"]
-		if !common.ValidateReferrer(data.Referrer, common.GetEnvVar("HTTP_ALLOWED_REFERRERS", "")) {
-			log.Printf("referrer missing or not allowed")
-		}
-		if err := writeComments.SaveComment(ctx, dynamoClient, snsClient, data.CommentEntryData); err != nil {
-			log.Printf("error posting comment: %v", err)
-			data.Response = err.Error()
+
+		allowedReferrers := common.GetEnvVar("HTTP_ALLOWED_REFERRERS", "")
+		if !common.ValidateReferrer(data.Referrer, allowedReferrers) {
+			log.Printf("Referrer check failed: Referer=%q (Allowed: %q)", data.Referrer, allowedReferrers)
+			data.Response = "comment rejected"
+		} else if !common.ValidateReferrer(data.PostOrigin, allowedReferrers) {
+			log.Printf("PostOrigin check failed: PostOrigin=%q (Allowed: %q)", data.PostOrigin, allowedReferrers)
+			data.Response = "comment rejected"
+		} else {
+			if err := writeComments.SaveComment(ctx, dynamoClient, snsClient, data.CommentEntryData); err != nil {
+				log.Printf("error posting comment: %v", err)
+				data.Response = err.Error()
+			}
 		}
 	}
 

@@ -4,10 +4,26 @@ import boto3
 import yaml
 import argparse
 
+def get_dynamo_resource():
+    endpoint_url = os.environ.get("AWS_ENDPOINT_URL")
+    region_name = os.environ.get("AWS_REGION", "us-east-1")
+    if endpoint_url:
+        print(f"Connecting to DynamoDB local at: {endpoint_url}")
+        return boto3.resource(
+            "dynamodb",
+            endpoint_url=endpoint_url,
+            region_name=region_name,
+            aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", "mock"),
+            aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", "mock")
+        )
+    else:
+        print("Connecting to production AWS DynamoDB...")
+        return boto3.resource("dynamodb", region_name=region_name)
+
 # Function to connect to DynamoDB and read all items from the table
 def read_dynamodb_table(table_name):
     # Initialize the DynamoDB resource using Boto3
-    dynamodb = boto3.resource('dynamodb')
+    dynamodb = get_dynamo_resource()
     
     # Connect to the specified table
     table = dynamodb.Table(table_name)

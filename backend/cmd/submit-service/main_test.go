@@ -188,6 +188,32 @@ func TestLambdaHandlerWeb_Submit_InvalidReferrer(t *testing.T) {
 	assert.Contains(t, resp.Body, "comment rejected")
 }
 
+func TestLambdaHandlerWeb_Submit_InvalidOrigin(t *testing.T) {
+	os.Setenv("HTTP_ALLOWED_REFERRERS", "localhost,example.com")
+	defer os.Unsetenv("HTTP_ALLOWED_REFERRERS")
+
+	bodyBytes, _ := json.Marshal(CommentData{
+		Name:    "Alice",
+		Email:   "alice@example.com",
+		Comment: "Great post!",
+		Page:    "/test-page",
+		// Origin is not allowed
+		Origin:  "http://unallowed.com/test-page",
+	})
+
+	req := events.APIGatewayProxyRequest{
+		Body: string(bodyBytes),
+		Headers: map[string]string{
+			"referer": "http://localhost:1313/test-page",
+		},
+	}
+
+	resp, err := lambdaHandlerWeb(context.TODO(), req)
+	assert.NoError(t, err)
+	assert.Equal(t, 403, resp.StatusCode)
+	assert.Contains(t, resp.Body, "comment rejected")
+}
+
 func TestLambdaHandlerWeb_Submit_SaveError(t *testing.T) {
 	os.Setenv("HTTP_ALLOWED_REFERRERS", "localhost,example.com")
 	os.Setenv("DYNAMO_USER_TABLE", "users")

@@ -42,9 +42,19 @@ func TestValidateReferrer(t *testing.T) {
 		expected         bool
 	}{
 		{"Empty referrer", "", "localhost,example.com", false},
-		{"Allowed match", "http://localhost:1313/page", "localhost,example.com", true},
-		{"Allowed match 2", "https://example.com/test", "localhost,example.com", true},
-		{"Not allowed", "https://malicious.com", "localhost,example.com", false},
+		{"Allowed match localhost port", "http://localhost:1313/page", "localhost,example.com", true},
+		{"Allowed match https", "https://example.com/test", "localhost,example.com", true},
+		{"Not allowed malicious domain", "https://malicious.com", "localhost,example.com", false},
+		{"Subdomain match allowed", "https://sub.example.com/test", "localhost,example.com", true},
+		{"Allowed match with exact scheme prefix", "https://example.com/test", "https://example.com", true},
+		{"Allowed match exact port in allowed list", "http://localhost:1313/page", "localhost:1313", true},
+		{"Allowed match wrong port in allowed list", "http://localhost:1313/page", "localhost:1414", false},
+		{"Bypass attempt via path injection", "https://malicious.com/example.com", "example.com", false},
+		{"Bypass attempt via query parameter", "http://localhost:1313/?url=https://example.com", "example.com", false},
+		{"Bypass attempt via host suffix similarity", "https://example.com.malicious.com", "example.com", false},
+		{"Bypass attempt via host prefix similarity", "https://notexample.com", "example.com", false},
+		{"No scheme referrer fallback", "localhost:1313/page", "localhost,example.com", true},
+		{"Malformed referrer URL", "http://[invalid-ipv6]/", "localhost", false},
 	}
 
 	for _, tc := range tests {

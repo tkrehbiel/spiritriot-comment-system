@@ -150,10 +150,15 @@ func handleComment(w http.ResponseWriter, r *http.Request) {
 		MastodonToken:  form.MastodonToken,
 	}
 
-	// Validate referrer against the allowed referrers list
+	// Validate referrer and origin against the allowed referrers list
 	allowedReferrers := os.Getenv("HTTP_ALLOWED_REFERRERS")
 	if !common.ValidateReferrer(data.Referrer, allowedReferrers) {
 		log.Printf("Referrer not allowed: %s (Allowed: %s)", data.Referrer, allowedReferrers)
+		http.Error(w, "comment rejected", http.StatusForbidden)
+		return
+	}
+	if !common.ValidateReferrer(data.PostOrigin, allowedReferrers) {
+		log.Printf("PostOrigin not allowed: %s (Allowed: %s)", data.PostOrigin, allowedReferrers)
 		http.Error(w, "comment rejected", http.StatusForbidden)
 		return
 	}
@@ -863,14 +868,18 @@ func handleCommentPage(w http.ResponseWriter, r *http.Request) {
 		allowedReferrers := os.Getenv("HTTP_ALLOWED_REFERRERS")
 		if !common.ValidateReferrer(data.Referrer, allowedReferrers) {
 			log.Printf("Referrer not allowed: %s (Allowed: %s)", data.Referrer, allowedReferrers)
-		}
-
-		err = writeComments.SaveComment(ctx, dynamoClient, snsClient, data.CommentEntryData)
-		if err != nil {
-			log.Printf("error posting comment: %v", err)
-			data.Response = err.Error()
+			data.Response = "comment rejected"
+		} else if !common.ValidateReferrer(data.PostOrigin, allowedReferrers) {
+			log.Printf("PostOrigin not allowed: %s (Allowed: %s)", data.PostOrigin, allowedReferrers)
+			data.Response = "comment rejected"
 		} else {
-			data.Response = "Comment submitted successfully."
+			err = writeComments.SaveComment(ctx, dynamoClient, snsClient, data.CommentEntryData)
+			if err != nil {
+				log.Printf("error posting comment: %v", err)
+				data.Response = err.Error()
+			} else {
+				data.Response = "Comment submitted successfully."
+			}
 		}
 	}
 

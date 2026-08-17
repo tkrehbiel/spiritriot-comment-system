@@ -154,6 +154,98 @@ func TestLambdaHandlerWeb_Page_POST(t *testing.T) {
 	assert.Contains(t, resp.Body, "No comments yet.")
 }
 
+func TestLambdaHandlerWeb_Page_POST_InvalidReferrer(t *testing.T) {
+	os.Setenv("HTML_TITLE", "Title")
+	os.Setenv("HTML_CSS", "style.css")
+	os.Setenv("DYNAMO_USER_TABLE", "users")
+	os.Setenv("DYNAMO_COMMENT_TABLE", "comments")
+	os.Setenv("HTTP_ALLOWED_REFERRERS", "localhost,example.com")
+	defer func() {
+		os.Unsetenv("HTML_TITLE")
+		os.Unsetenv("HTML_CSS")
+		os.Unsetenv("DYNAMO_USER_TABLE")
+		os.Unsetenv("DYNAMO_COMMENT_TABLE")
+		os.Unsetenv("HTTP_ALLOWED_REFERRERS")
+	}()
+
+	mockDb := new(MockPageDynamo)
+	mockSns := new(MockPageSNS)
+	dynamoClient = mockDb
+	snsClient = mockSns
+
+	// Mock query for recent comments (SaveComment should not be called)
+	mockDb.On("Query", mock.Anything, mock.Anything).Return(&dynamodb.QueryOutput{
+		Items: nil,
+		Count: 0,
+	}, nil)
+
+	req := events.APIGatewayProxyRequest{
+		HTTPMethod: "POST",
+		Body:       "title=Title&origin=http%3A%2F%2Flocalhost%3A1313%2Fpage&page=%2Fpage&name=Alice&email=alice%40example.com&comment=Great!",
+		Headers: map[string]string{
+			"referer": "http://unallowed.com/page",
+		},
+		RequestContext: events.APIGatewayProxyRequestContext{
+			Identity: events.APIGatewayRequestIdentity{
+				SourceIP:  "127.0.0.1",
+				UserAgent: "Agent",
+			},
+		},
+	}
+
+	resp, err := lambdaHandlerWeb(context.TODO(), req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	// Body should indicate comment was rejected
+	assert.Contains(t, resp.Body, "comment rejected")
+}
+
+func TestLambdaHandlerWeb_Page_POST_InvalidOrigin(t *testing.T) {
+	os.Setenv("HTML_TITLE", "Title")
+	os.Setenv("HTML_CSS", "style.css")
+	os.Setenv("DYNAMO_USER_TABLE", "users")
+	os.Setenv("DYNAMO_COMMENT_TABLE", "comments")
+	os.Setenv("HTTP_ALLOWED_REFERRERS", "localhost,example.com")
+	defer func() {
+		os.Unsetenv("HTML_TITLE")
+		os.Unsetenv("HTML_CSS")
+		os.Unsetenv("DYNAMO_USER_TABLE")
+		os.Unsetenv("DYNAMO_COMMENT_TABLE")
+		os.Unsetenv("HTTP_ALLOWED_REFERRERS")
+	}()
+
+	mockDb := new(MockPageDynamo)
+	mockSns := new(MockPageSNS)
+	dynamoClient = mockDb
+	snsClient = mockSns
+
+	// Mock query for recent comments
+	mockDb.On("Query", mock.Anything, mock.Anything).Return(&dynamodb.QueryOutput{
+		Items: nil,
+		Count: 0,
+	}, nil)
+
+	req := events.APIGatewayProxyRequest{
+		HTTPMethod: "POST",
+		// Origin is not allowed
+		Body:       "title=Title&origin=http%3A%2F%2Funallowed.com%2Fpage&page=%2Fpage&name=Alice&email=alice%40example.com&comment=Great!",
+		Headers: map[string]string{
+			"referer": "http://localhost:1313/page",
+		},
+		RequestContext: events.APIGatewayProxyRequestContext{
+			Identity: events.APIGatewayRequestIdentity{
+				SourceIP:  "127.0.0.1",
+				UserAgent: "Agent",
+			},
+		},
+	}
+
+	resp, err := lambdaHandlerWeb(context.TODO(), req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Contains(t, resp.Body, "comment rejected")
+}
+
 func TestRenderTemplate_Error(t *testing.T) {
 	tmpl := template.New("incomplete")
 	res := renderTemplate(tmpl, CommentPageData{})

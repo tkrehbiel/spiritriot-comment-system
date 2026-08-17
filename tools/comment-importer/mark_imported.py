@@ -4,6 +4,22 @@ import argparse
 import sys
 import os
 
+def get_dynamo_resource():
+    endpoint_url = os.environ.get("AWS_ENDPOINT_URL")
+    region_name = os.environ.get("AWS_REGION", "us-east-1")
+    if endpoint_url:
+        print(f"Connecting to DynamoDB local at: {endpoint_url}")
+        return boto3.resource(
+            "dynamodb",
+            endpoint_url=endpoint_url,
+            region_name=region_name,
+            aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", "mock"),
+            aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", "mock")
+        )
+    else:
+        print("Connecting to production AWS DynamoDB...")
+        return boto3.resource("dynamodb", region_name=region_name)
+
 def mark_comments_as_imported(yaml_filepath, table_name):
     # Check if file exists
     if not os.path.exists(yaml_filepath):
@@ -35,7 +51,7 @@ def mark_comments_as_imported(yaml_filepath, table_name):
     print(f"Found {total_comments} comments to mark as imported in DynamoDB table '{table_name}'.")
     
     # Initialize boto3 DynamoDB resource
-    dynamodb = boto3.resource('dynamodb')
+    dynamodb = get_dynamo_resource()
     table = dynamodb.Table(table_name)
 
     print("Updating DynamoDB items...")
